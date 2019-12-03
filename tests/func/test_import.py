@@ -8,7 +8,8 @@ import pytest
 from mock import patch
 
 from dvc.config import Config
-from dvc.exceptions import DownloadError, NoOutputInExternalRepoError
+from dvc.exceptions import DownloadError
+from dvc.exceptions import FileOutsideRepoError
 from dvc.stage import Stage
 from dvc.system import System
 from dvc.utils import makedirs
@@ -24,6 +25,40 @@ def test_import(git, dvc_repo, erepo):
     assert os.path.exists(dst)
     assert os.path.isfile(dst)
     assert filecmp.cmp(erepo.FOO, dst, shallow=False)
+    assert git.git.check_ignore(dst)
+
+
+def test_import_git_file(git, dvc_repo, erepo):
+    src = "some_file"
+    dst = "some_file_imported"
+
+    src_path = os.path.join(erepo.root_dir, src)
+    erepo.create(src_path, "hello")
+    erepo.dvc.scm.add([src_path])
+    erepo.dvc.scm.commit("add a regular file")
+
+    dvc_repo.imp(erepo.root_dir, src, dst)
+
+    assert os.path.exists(dst)
+    assert os.path.isfile(dst)
+    assert filecmp.cmp(src_path, dst, shallow=False)
+    assert git.git.check_ignore(dst)
+
+
+def test_import_git_dir(git, dvc_repo, erepo):
+    src = "some_directory"
+    dst = "some_directory_imported"
+
+    src_file_path = os.path.join(erepo.root_dir, src, "file.txt")
+    erepo.create(src_file_path, "hello")
+    erepo.dvc.scm.add([src_file_path])
+    erepo.dvc.scm.commit("add a regular dir")
+
+    dvc_repo.imp(erepo.root_dir, src, dst)
+
+    assert os.path.exists(dst)
+    assert os.path.isdir(dst)
+    trees_equal(os.path.join(erepo.root_dir, src), dst)
     assert git.git.check_ignore(dst)
 
 
@@ -157,5 +192,8 @@ def test_pull_non_workspace(git, dvc_repo, erepo):
 
 
 def test_import_non_existing(dvc_repo, erepo):
-    with pytest.raises(NoOutputInExternalRepoError):
+    with pytest.raises(FileOutsideRepoError):
         dvc_repo.imp(erepo.root_dir, "invalid_output")
+    # https://github.com/iterative/dvc/pull/2837#discussion_r352123053
+    with pytest.raises(FileOutsideRepoError):
+        dvc_repo.imp(erepo.root_dir, "/root/")
