@@ -10,6 +10,7 @@ import nanotime
 from shortuuid import uuid
 
 from dvc.exceptions import DvcException
+from dvc.exceptions import FileOutsideRepoError
 from dvc.system import System
 from dvc.utils import dict_md5
 from dvc.utils import fspath
@@ -20,6 +21,19 @@ from dvc.utils.compat import str
 
 
 logger = logging.getLogger(__name__)
+
+
+def copy_git_file(repo, src, dst):
+    src_full_path = os.path.join(repo.root_dir, src)
+    dst_full_path = os.path.abspath(dst)
+
+    if repo.root_dir not in src_full_path:
+        raise FileOutsideRepoError(src)
+
+    if os.path.isdir(src_full_path):
+        shutil.copytree(src_full_path, dst_full_path)
+    else:
+        shutil.copy2(src_full_path, dst_full_path)
 
 
 def get_inode(path):

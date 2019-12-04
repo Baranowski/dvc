@@ -318,8 +318,6 @@ class Repo(object):
         G = nx.DiGraph()
         stages = stages or self.collect_stages()
         stages = [stage for stage in stages if stage]
-        logger.debug("[_collect_graph]", str(stages))
-
         outs = {}
 
         for stage in stages:
@@ -423,8 +421,6 @@ class Repo(object):
     def find_outs_by_path(self, path, outs=None, recursive=False):
         if not outs:
             outs = [out for stage in self.stages for out in stage.outs]
-        logger.debug("[outs]")
-        logger.debug(str(outs))
 
         abs_path = os.path.abspath(path)
         is_dir = self.tree.isdir(abs_path)

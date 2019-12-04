@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 
 import shortuuid
 
@@ -9,28 +8,15 @@ from dvc.exceptions import NotDvcRepoError
 from dvc.exceptions import OutputNotFoundError
 from dvc.exceptions import UrlNotDvcRepoError
 from dvc.exceptions import NoOutputInExternalRepoError
-from dvc.exceptions import FileOutsideRepoError
 from dvc.external_repo import external_repo
 from dvc.path_info import PathInfo
 from dvc.stage import Stage
 from dvc.state import StateNoop
 from dvc.utils import resolve_output
 from dvc.utils.fs import remove
+from dvc.utils.fs import copy_git_file
 
 logger = logging.getLogger(__name__)
-
-
-def copy_git_file(repo, src, dst):
-    src_full_path = os.path.join(repo.root_dir, src)
-    dst_full_path = os.path.abspath(dst)
-
-    if repo.root_dir not in src_full_path:
-        raise FileOutsideRepoError(src)
-
-    if os.path.isdir(src_full_path):
-        shutil.copytree(src_full_path, dst_full_path)
-    else:
-        shutil.copy2(src_full_path, dst_full_path)
 
 
 @staticmethod

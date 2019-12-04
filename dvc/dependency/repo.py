@@ -7,26 +7,9 @@ from funcy import merge
 
 from .local import DependencyLOCAL
 from dvc.exceptions import NoOutputInExternalRepoError
-from dvc.exceptions import FileOutsideRepoError
 from dvc.external_repo import external_repo
 from dvc.utils.compat import str
-
-
-import os
-import shutil
-
-
-def copy_git_file(repo, src, dst):
-    src_full_path = os.path.join(repo.root_dir, src)
-    dst_full_path = os.path.abspath(dst)
-
-    if repo.root_dir not in src_full_path:
-        raise FileOutsideRepoError(src)
-
-    if os.path.isdir(src_full_path):
-        shutil.copytree(src_full_path, dst_full_path)
-    else:
-        shutil.copy2(src_full_path, dst_full_path)
+from dvc.utils.fs import copy_git_file
 
 
 class DependencyREPO(DependencyLOCAL):
