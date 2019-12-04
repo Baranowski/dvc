@@ -6,8 +6,28 @@ from contextlib import contextmanager
 from funcy import merge
 
 from .local import DependencyLOCAL
+from dvc.exceptions import OutputNotFoundError
+from dvc.exceptions import FileOutsideRepoError
 from dvc.external_repo import external_repo
 from dvc.utils.compat import str
+from dvc.utils.fs import remove
+
+
+import os
+import shutil
+
+
+def copy_git_file(repo, src, dst):
+    src_full_path = os.path.join(repo.root_dir, src)
+    dst_full_path = os.path.abspath(dst)
+
+    if repo.root_dir not in src_full_path:
+        raise FileOutsideRepoError(src)
+
+    if os.path.isdir(src_full_path):
+        shutil.copytree(src_full_path, dst_full_path)
+    else:
+        shutil.copy2(src_full_path, dst_full_path)
 
 
 class DependencyREPO(DependencyLOCAL):
@@ -60,15 +80,21 @@ class DependencyREPO(DependencyLOCAL):
     def dumpd(self):
         return {self.PARAM_PATH: self.def_path, self.PARAM_REPO: self.def_repo}
 
-    def fetch(self):
+    def fetch(self, to):
         with self._make_repo(
             cache_dir=self.repo.cache.local.cache_dir
         ) as repo:
             self.def_repo[self.PARAM_REV_LOCK] = repo.scm.get_rev()
 
-            out = repo.find_out_by_relpath(self.def_path)
-            with repo.state:
-                repo.cloud.pull(out.get_used_cache())
+            try:
+                out = repo.find_out_by_relpath(self.def_path)
+                with repo.state:
+                    repo.cloud.pull(out.get_used_cache())
+            except OutputNotFoundError:
+                copy_git_file(repo, self.def_path, to.fspath)
+                out = to
+            finally:
+                remove(self.repo.cache.local.cache_dir)
 
         return out
 

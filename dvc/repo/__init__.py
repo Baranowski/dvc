@@ -421,6 +421,8 @@ class Repo(object):
     def find_outs_by_path(self, path, outs=None, recursive=False):
         if not outs:
             outs = [out for stage in self.stages for out in stage.outs]
+        logger.debug("[outs]")
+        logger.debug(str(outs))
 
         abs_path = os.path.abspath(path)
         is_dir = self.tree.isdir(abs_path)

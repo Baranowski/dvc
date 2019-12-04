@@ -20,7 +20,7 @@ from dvc.utils.fs import remove
 logger = logging.getLogger(__name__)
 
 
-def _copy_git_file(repo, src, dst):
+def copy_git_file(repo, src, dst):
     src_full_path = os.path.join(repo.root_dir, src)
     dst_full_path = os.path.abspath(dst)
 
@@ -73,7 +73,7 @@ def get(url, path, out=None, rev=None):
                 o.checkout()
 
     except NoOutputInExternalRepoError:
-        _copy_git_file(repo, path, out)
+        copy_git_file(repo, path, out)
     except NotDvcRepoError:
         raise UrlNotDvcRepoError(url)
     except OutputNotFoundError:
