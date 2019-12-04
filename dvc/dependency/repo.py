@@ -6,11 +6,10 @@ from contextlib import contextmanager
 from funcy import merge
 
 from .local import DependencyLOCAL
-from dvc.exceptions import OutputNotFoundError
+from dvc.exceptions import NoOutputInExternalRepoError
 from dvc.exceptions import FileOutsideRepoError
 from dvc.external_repo import external_repo
 from dvc.utils.compat import str
-from dvc.utils.fs import remove
 
 
 import os
@@ -80,28 +79,28 @@ class DependencyREPO(DependencyLOCAL):
     def dumpd(self):
         return {self.PARAM_PATH: self.def_path, self.PARAM_REPO: self.def_repo}
 
-    def fetch(self, to):
+    def fetch(self):
         with self._make_repo(
             cache_dir=self.repo.cache.local.cache_dir
         ) as repo:
             self.def_repo[self.PARAM_REV_LOCK] = repo.scm.get_rev()
 
-            try:
-                out = repo.find_out_by_relpath(self.def_path)
-                with repo.state:
-                    repo.cloud.pull(out.get_used_cache())
-            except OutputNotFoundError:
-                copy_git_file(repo, self.def_path, to.fspath)
-                out = to
-            finally:
-                remove(self.repo.cache.local.cache_dir)
+            out = repo.find_out_by_relpath(self.def_path)
+            with repo.state:
+                repo.cloud.pull(out.get_used_cache())
 
         return out
 
     def download(self, to):
-        out = self.fetch()
-        to.info = copy.copy(out.info)
-        to.checkout()
+        try:
+            out = self.fetch()
+            to.info = copy.copy(out.info)
+            to.checkout()
+        except NoOutputInExternalRepoError:
+            with self._make_repo(
+                cache_dir=self.repo.cache.local.cache_dir
+            ) as repo:
+                copy_git_file(repo, self.def_path, to.fspath)
 
     def update(self):
         with self._make_repo(rev_lock=None) as repo:
