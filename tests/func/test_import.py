@@ -10,6 +10,7 @@ from mock import patch
 from dvc.config import Config
 from dvc.exceptions import DownloadError
 from dvc.exceptions import FileOutsideRepoError
+from dvc.exceptions import NoOutputInExternalRepoError
 from dvc.stage import Stage
 from dvc.system import System
 from dvc.utils import makedirs
@@ -192,8 +193,8 @@ def test_pull_non_workspace(git, dvc_repo, erepo):
 
 
 def test_import_non_existing(dvc_repo, erepo):
-    with pytest.raises(FileOutsideRepoError):
+    with pytest.raises(NoOutputInExternalRepoError):
         dvc_repo.imp(erepo.root_dir, "invalid_output")
     # https://github.com/iterative/dvc/pull/2837#discussion_r352123053
     with pytest.raises(FileOutsideRepoError):
-        dvc_repo.imp(erepo.root_dir, "/root/")
+        dvc_repo.imp(erepo.root_dir, "/root/", "root")

@@ -96,11 +96,14 @@ class DependencyREPO(DependencyLOCAL):
             out = self.fetch()
             to.info = copy.copy(out.info)
             to.checkout()
-        except NoOutputInExternalRepoError:
-            with self._make_repo(
-                cache_dir=self.repo.cache.local.cache_dir
-            ) as repo:
-                copy_git_file(repo, self.def_path, to.fspath)
+        except NoOutputInExternalRepoError as e:
+            try:
+                with self._make_repo(
+                    cache_dir=self.repo.cache.local.cache_dir
+                ) as repo:
+                    copy_git_file(repo, self.def_path, to.fspath)
+            except FileNotFoundError:
+                raise e
 
     def update(self):
         with self._make_repo(rev_lock=None) as repo:

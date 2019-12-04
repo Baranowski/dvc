@@ -318,6 +318,8 @@ class Repo(object):
         G = nx.DiGraph()
         stages = stages or self.collect_stages()
         stages = [stage for stage in stages if stage]
+        logger.debug("[_collect_graph]", str(stages))
+
         outs = {}
 
         for stage in stages:
